@@ -2,10 +2,15 @@
 	"name": "figma-to-code",
 	"private": true,
 	"type": "module",
-	"scripts": {
-		"setup:browser": "playwright install chromium"
+	"bin": {
+		"figma-diff": "scripts/figma-diff.mjs",
+		"design-image": "scripts/design-image.mjs"
 	},
-	"devDependencies": {
+	"scripts": {
+		"setup:browser": "playwright install chromium",
+		"test": "node --test"
+	},
+	"dependencies": {
 		"pixelmatch": "^7.2.0",
 		"playwright": "^1.64.0",
 		"pngjs": "^7.0.0"
