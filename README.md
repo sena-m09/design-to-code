@@ -10,6 +10,7 @@
 | `image-to-code` スキル | デザインカンプの画像（PNG/JPG）から実装する |
 | `figma-diff` コマンド（`scripts/figma-diff.mjs`） | デザインの画像と実装の描画結果を比べる |
 | `design-image` コマンド（`scripts/design-image.mjs`） | デザインの画像の寸法・色・背景の切り替わりを測る |
+| `design-flow` コマンド（`scripts/design-flow.mjs`） | image-to-code の手順の順番と、検証・差分の合否・調整の回数を決める |
 
 ## プロジェクトへの導入
 
@@ -55,11 +56,12 @@
    pnpm setup:browser
    ```
 
-2. `figma-diff` と `design-image` を `PATH` の通った場所からリンクする。
+2. 3 つのコマンドを `PATH` の通った場所からリンクする。
 
    ```sh
    ln -s "$PWD/scripts/figma-diff.mjs" ~/.local/bin/figma-diff
    ln -s "$PWD/scripts/design-image.mjs" ~/.local/bin/design-image
+   ln -s "$PWD/scripts/design-flow.mjs" ~/.local/bin/design-flow
    ```
 
 3. スキルを `~/.claude/skills/` にリンクすると、すべてのプロジェクトから呼べる。
@@ -68,7 +70,7 @@
    ln -s "$PWD/.claude/skills/image-to-code" ~/.claude/skills/image-to-code
    ```
 
-4. 使うプロジェクトごとに、`.figma-diff/` を git の管理から外し、`.claude/settings.local.json` のサンドボックス除外に `"figma-diff *"` を足す。
+4. 使うプロジェクトごとに、`.figma-diff/` を git の管理から外し、`.claude/settings.local.json` のサンドボックス除外に `"figma-diff *"` と `"design-flow measure"` を足す。
 
 ## 使い方
 
@@ -105,6 +107,21 @@ design-image bands <PNG> --scale 2                          # 1 色で塗られ�
 ```
 
 `bands` は、背景が 1 色で塗られた行（`solid`）と、要素が載った行（`mixed`）の並びを返す。セクションの境目や要素の間の余白を測るのに使う。`--axis x` と `--rect` を付けると、指定した範囲の中で列ごとに同じことをする。
+
+### design-flow
+
+image-to-code の手順を進めるエンジン。LLM は `next` が返す JSON（directive）に従って 1 手ずつ進め、終えたら `report` で報告する。順番・合否・調整の回数・調整を戻すかどうかはエンジンが決め、状態は `.figma-diff/flow/state.json` に残る。
+
+```sh
+design-flow start --figma <PNG> --url <URL> --selector <セレクタ> --width <設計幅> --check "pnpm typecheck"
+design-flow next            # 次の手順（状態は変えない）
+design-flow report <手順>    # 画像の読み取り・実装・調整などを終えたと報告する
+design-flow verify          # --check のコマンドを走らせ、終了コードで判定する
+design-flow measure         # figma-diff で差分を測り、合格・調整・戻す・打ち切りを決める
+design-flow status          # 各回の diffRatio と経過
+```
+
+`report` は、証拠が揃っていないと拒否する。実装や調整はファイルが変わっていること、調整を戻したときは一番良かった計測時とファイルの中身が一致することを確かめる。計測のたびに、`.figma-diff/runs.jsonl` へ差分率が 1 行ずつ残る。
 
 ## 開発
 
