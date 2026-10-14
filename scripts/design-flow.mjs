@@ -81,7 +81,7 @@ try {
 		case "start": {
 			const missing = ["figma", "url", "selector", "width"].filter((key) => !values[key]);
 			if (missing.length > 0) fail(`必須引数が不足しています: ${missing.map((k) => `--${k}`).join(", ")}`);
-			if (existsSync(statePath) && !values.force) {
+			if (existsSync(statePath) && loadState().step !== "done" && !values.force) {
 				fail("進行中のフローがあります。続けるなら design-flow next、始め直すなら --force を付けてください。");
 			}
 			const config = {
