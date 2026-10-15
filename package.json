@@ -9,7 +9,8 @@
 	},
 	"scripts": {
 		"setup:browser": "playwright install chromium",
-		"test": "node --test"
+		"test": "node --test",
+		"docs:flow": "node scripts/flow-doc.mjs"
 	},
 	"dependencies": {
 		"pixelmatch": "^7.2.0",

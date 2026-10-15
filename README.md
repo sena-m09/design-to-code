@@ -121,6 +121,8 @@ design-flow measure         # figma-diff で差分を測り、合格・調整・
 design-flow status          # 各回の diffRatio と経過
 ```
 
+手順と遷移の全体は [docs/design-flow.md](docs/design-flow.md) の状態遷移図にある。図は `scripts/lib/flow/machine.mjs` の遷移表から `pnpm docs:flow` で生成していて、表と図がずれるとテストが落ちる。
+
 `report` は、証拠が揃っていないと拒否する。実装や調整はファイルが変わっていること、調整を戻したときは一番良かった計測時とファイルの中身が一致することを確かめる。計測のたびに、`.figma-diff/runs.jsonl` へ差分率が 1 行ずつ残る。
 
 ## 開発
