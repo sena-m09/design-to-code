@@ -15,7 +15,7 @@
 ```sh
 git clone https://github.com/sena-m09/design-to-code.git
 cd design-to-code
-git switch feat/sena-m09-flow-engine
+git switch feat/sena-m09
 pnpm install
 pnpm setup:browser
 ```
@@ -24,21 +24,13 @@ pnpm setup:browser
 
 ## 2. コマンドとスキルをリンクする
 
-`figma-diff`・`design-image`・`design-flow` の 3 つのコマンドと、`image-to-code` スキルをリンクします。design-to-code のディレクトリで実行してください。
+design-to-code のディレクトリで次を実行すると、コマンドを `~/.local/bin` に、`image-to-code` スキルを `~/.claude/skills` にリンクします。何度実行しても同じ結果になります。
 
 ```sh
-mkdir -p ~/.local/bin ~/.claude/skills
-ln -s "$PWD/scripts/figma-diff.mjs" ~/.local/bin/figma-diff
-ln -s "$PWD/scripts/design-image.mjs" ~/.local/bin/design-image
-ln -s "$PWD/scripts/design-flow.mjs" ~/.local/bin/design-flow
-ln -s "$PWD/.claude/skills/image-to-code" ~/.claude/skills/image-to-code
+pnpm setup:local
 ```
 
-`~/.local/bin` に `PATH` が通っているかを確かめます。何も表示されなければ通っていないので、シェルの設定ファイルに `export PATH="$HOME/.local/bin:$PATH"` を足して開き直してください。
-
-```sh
-which design-flow
-```
+同じ名前で別のものがすでにある場合は、上書きせずに飛ばして知らせます。`~/.local/bin` に `PATH` が通っていなければ、その直し方も表示します。
 
 ## 3. 実装先のプロジェクトを準備する
 
@@ -46,7 +38,7 @@ which design-flow
 
 ### `.figma-diff/` を git の管理から外す
 
-比較の画像や進み具合の記録は `.figma-diff/` に書き出されます。ここを外し忘れると、ファイルが変わったかどうかの判定が狂い、調整を戻す手順から先に進めなくなります。必ず外してください。
+比較の画像や進み具合の記録は `.figma-diff/` に書き出されます。ここが外れていないと、ファイルが変わったかどうかの判定が狂うので、外れていなければ Claude が始めようとしたところで止まります。
 
 チームの `.gitignore` を変えたくなければ、自分の手元だけで外せます。
 
@@ -121,10 +113,10 @@ Claude は、`design-flow` が示す手順に沿って進みます。
 
 ## 片づける
 
-リンクを消せば元に戻ります。
+design-to-code のディレクトリで次を実行すると、`pnpm setup:local` で張ったリンクだけを消します。
 
 ```sh
-rm ~/.local/bin/figma-diff ~/.local/bin/design-image ~/.local/bin/design-flow ~/.claude/skills/image-to-code
+pnpm setup:local --remove
 ```
 
 実装先のプロジェクトでは、`.figma-diff/` を消し、足した除外の設定を戻してください。

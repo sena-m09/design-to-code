@@ -57,21 +57,13 @@
    pnpm setup:browser
    ```
 
-2. 3 つのコマンドを `PATH` の通った場所からリンクする。
+2. コマンドを `~/.local/bin` に、`image-to-code` スキルを `~/.claude/skills/` にリンクする。外すときは `pnpm setup:local --remove`。
 
    ```sh
-   ln -s "$PWD/scripts/figma-diff.mjs" ~/.local/bin/figma-diff
-   ln -s "$PWD/scripts/design-image.mjs" ~/.local/bin/design-image
-   ln -s "$PWD/scripts/design-flow.mjs" ~/.local/bin/design-flow
+   pnpm setup:local
    ```
 
-3. スキルを `~/.claude/skills/` にリンクすると、すべてのプロジェクトから呼べる。
-
-   ```sh
-   ln -s "$PWD/.claude/skills/image-to-code" ~/.claude/skills/image-to-code
-   ```
-
-4. 使うプロジェクトごとに、`.figma-diff/` を git の管理から外し、`.claude/settings.local.json` のサンドボックス除外に `"figma-diff *"` と `"design-flow measure"` を足す。
+3. 使うプロジェクトごとに、`.figma-diff/` を git の管理から外し、`.claude/settings.local.json` のサンドボックス除外に `"figma-diff *"` と `"design-flow measure"` を足す。
 
 ## 使い方
 

@@ -11,7 +11,8 @@
 	"scripts": {
 		"setup:browser": "playwright install chromium",
 		"test": "node --test",
-		"docs:flow": "node scripts/flow-doc.mjs"
+		"docs:flow": "node scripts/flow-doc.mjs",
+		"setup:local": "node scripts/setup-local.mjs"
 	},
 	"dependencies": {
 		"pixelmatch": "^7.2.0",
