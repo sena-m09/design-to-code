@@ -5,11 +5,13 @@
 	"bin": {
 		"figma-diff": "scripts/figma-diff.mjs",
 		"design-image": "scripts/design-image.mjs",
+		"design-flow": "scripts/design-flow.mjs",
 		"harness-report": "scripts/harness-report.mjs"
 	},
 	"scripts": {
 		"setup:browser": "playwright install chromium",
-		"test": "node --test"
+		"test": "node --test",
+		"docs:flow": "node scripts/flow-doc.mjs"
 	},
 	"dependencies": {
 		"pixelmatch": "^7.2.0",
