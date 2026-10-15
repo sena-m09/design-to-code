@@ -10,7 +10,7 @@
 | `image-to-code` スキル | デザインカンプの画像（PNG/JPG）から実装する |
 | `figma-diff` コマンド（`scripts/figma-diff.mjs`） | デザインの画像と実装の描画結果を比べる |
 | `design-image` コマンド（`scripts/design-image.mjs`） | デザインの画像の寸法・色・背景の切り替わりを測る |
-| `harness-report` コマンド（`scripts/harness-report.mjs`） | スキルを動かした Claude Code のセッションを集計し、比べやすい報告にまとめる |
+| `harness-report` コマンド（`scripts/harness-report.mjs`） | スキルを動かした Claude Code のセッションを集計し、HTML の報告にまとめる |
 
 ## プロジェクトへの導入
 
@@ -109,11 +109,13 @@ design-image bands <PNG> --scale 2                          # 1 色で塗られ�
 
 ### harness-report
 
-スキルを動かした Claude Code のセッションのログを読み、Markdown の報告にまとめる。スキルを試したあと、どれだけ手間とトークンがかかったかを振り返るときに使う。
+スキルを動かした Claude Code のセッションのログを読み、HTML の報告にまとめる。スキルを試したあと、どれだけ手間とトークンがかかったかを振り返るときに使う。
 
 ```sh
-harness-report <worktree のパス> [--json]
+harness-report <worktree のパス> > report.html
 ```
+
+報告は標準出力に出るので、ファイルに書き出してブラウザで開く。集計した値をそのまま見たいときは `--json` を付ける。
 
 worktree のパスを渡すと、`~/.claude/projects/` からその worktree の最新のログを選ぶ。別のログを使いたいときは、jsonl のパスを直接渡す。
 

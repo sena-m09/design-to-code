@@ -2,6 +2,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { parseArgs } from "node:util";
+import { renderHtml } from "./lib/report-html.mjs";
 import {
 	activeMs,
 	crossAccess,
@@ -65,99 +66,4 @@ if (values.json) {
 	process.exit(0);
 }
 
-const time = (iso) => new Date(iso).toLocaleTimeString("ja-JP", { hour12: false });
-const duration = (ms) => `${Math.floor(ms / 60000)} 分 ${Math.round((ms % 60000) / 1000)} 秒`;
-const tokens = (n) => (n >= 1000 ? `${(n / 10000).toFixed(1)} 万` : String(n));
-const percent = (ratio) => `${(ratio * 100).toFixed(2)}%`;
-const oneLine = (text, max = 80) => {
-	const flat = text.replace(/\s+/g, " ").trim();
-	return flat.length > max ? `${flat.slice(0, max)}…` : flat;
-};
-const row = (label, cells) => `| ${label} | ${cells.join(" | ")} |`;
-const laterTurns = (session) => session.turns.slice(1);
-
-const lines = ["# ハーネスの報告", ""];
-lines.push(row("", sessions.map((s) => s.name)));
-lines.push(row("---", sessions.map(() => "---")));
-lines.push(row("完了までの時間（入力待ちを除く）", sessions.map((s) => duration(s.activeMs))));
-lines.push(
-	row(
-		"最初の依頼のあとの入力",
-		sessions.map((s) => {
-			const later = laterTurns(s);
-			const prompts = later.filter((t) => t.kind === "prompt").length;
-			return `${later.length} 回（プロンプト ${prompts}、コマンド ${later.length - prompts}）`;
-		}),
-	),
-);
-lines.push(row("トークンの合計（本体 + advisor）", sessions.map((s) => tokens(s.tokens.total))));
-lines.push(
-	row(
-		"トークン: 新しく読んだ入力 / 出力",
-		sessions.map((s) => `${tokens(s.tokens.main.input + s.tokens.main.cacheCreation)} / ${tokens(s.tokens.main.output)}`),
-	),
-);
-lines.push(row("トークン: キャッシュから読んだ入力", sessions.map((s) => tokens(s.tokens.main.cacheRead))));
-lines.push(
-	row(
-		"トークン: advisor",
-		sessions.map((s) =>
-			s.tokens.advisor.calls === 0
-				? "なし"
-				: `${s.tokens.advisor.calls} 回、入力 ${tokens(s.tokens.advisor.input)} / 出力 ${tokens(s.tokens.advisor.output)}`,
-		),
-	),
-);
-lines.push(
-	row(
-		"差分率の推移",
-		sessions.map((s) => (s.diffRuns.length === 0 ? "記録なし" : s.diffRuns.map((r) => percent(r.diffRatio)).join(" → "))),
-	),
-);
-lines.push(
-	row(
-		"最後の判定",
-		sessions.map((s) => {
-			const last = s.diffRuns.at(-1);
-			return last ? `${last.pass ? "合格" : "不合格"}（調整 ${s.diffRuns.length - 1} 回）` : "記録なし";
-		}),
-	),
-);
-lines.push("");
-
-if (sessions.length > 1) {
-	lines.push("## 他方の worktree を読んだ記録", "");
-	const hits = sessions.flatMap((s) => s.crossAccess.map((hit) => ({ ...hit, name: s.name })));
-	if (hits.length === 0) lines.push("なし");
-	for (const hit of hits) lines.push(`- ${hit.name}（${time(hit.at)}、${hit.tool}）: \`${oneLine(hit.input, 120)}\``);
-	lines.push("");
-}
-
-lines.push("## 最初の依頼のあとの入力", "");
-for (const s of sessions) {
-	const later = laterTurns(s);
-	const prefix = sessions.length > 1 ? `${s.name}: ` : "";
-	if (later.length === 0) lines.push(`- ${prefix}なし`);
-	for (const turn of later) {
-		const body = turn.kind === "command" ? `/${turn.command} ${turn.text}`.trim() : turn.text;
-		lines.push(`- ${prefix}${time(turn.at)} ${oneLine(body)}`);
-	}
-}
-lines.push("");
-
-lines.push("## ツールが使われたタイミング", "");
-for (const s of sessions) {
-	if (sessions.length > 1) lines.push(`### ${s.name}`, "");
-	lines.push("| 時刻 | 使われたもの |", "|---|---|");
-	for (const event of s.timeline) {
-		const at = event.count > 1 && event.until !== event.at ? `${time(event.at)}〜${time(event.until)}` : time(event.at);
-		const label = event.label === "edit" ? "ファイルの編集" : `\`${event.label}\``;
-		lines.push(`| ${at} | ${label}${event.count > 1 ? ` ×${event.count}` : ""} |`);
-	}
-	lines.push("");
-}
-
-lines.push("## 集計に使ったログ", "");
-for (const s of sessions) lines.push(`- ${s.logPath}`);
-
-console.log(lines.join("\n"));
+process.stdout.write(renderHtml(sessions));
