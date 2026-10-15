@@ -81,6 +81,13 @@ try {
 		case "start": {
 			const missing = ["figma", "url", "selector", "width"].filter((key) => !values[key]);
 			if (missing.length > 0) fail(`必須引数が不足しています: ${missing.map((k) => `--${k}`).join(", ")}`);
+			const ignored = spawnSync("git", ["check-ignore", "-q", ".figma-diff/flow/state.json"], { cwd });
+			if (ignored.status === 128) fail("git で管理しているプロジェクトのルートで実行してください。");
+			if (ignored.status !== 0) {
+				fail(
+					'.figma-diff/ が git の管理から外れていません。外れていないと、ファイルが変わったかどうかの判定にこのコマンド自身の記録が混ざります。\necho ".figma-diff/" >> .git/info/exclude で外してから、もう一度実行してください。',
+				);
+			}
 			if (existsSync(statePath) && loadState().step !== "done" && !values.force) {
 				fail("進行中のフローがあります。続けるなら design-flow next、始め直すなら --force を付けてください。");
 			}
