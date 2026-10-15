@@ -10,6 +10,7 @@
 | `image-to-code` スキル | デザインカンプの画像（PNG/JPG）から実装する |
 | `figma-diff` コマンド（`scripts/figma-diff.mjs`） | デザインの画像と実装の描画結果を比べる |
 | `design-image` コマンド（`scripts/design-image.mjs`） | デザインの画像の寸法・色・背景の切り替わりを測る |
+| `harness-report` コマンド（`scripts/harness-report.mjs`） | スキルを動かした Claude Code のセッションを集計し、比べやすい報告にまとめる |
 
 ## プロジェクトへの導入
 
@@ -105,6 +106,26 @@ design-image bands <PNG> --scale 2                          # 1 色で塗られ�
 ```
 
 `bands` は、背景が 1 色で塗られた行（`solid`）と、要素が載った行（`mixed`）の並びを返す。セクションの境目や要素の間の余白を測るのに使う。`--axis x` と `--rect` を付けると、指定した範囲の中で列ごとに同じことをする。
+
+### harness-report
+
+スキルを動かした Claude Code のセッションのログを読み、Markdown の報告にまとめる。スキルを試したあと、どれだけ手間とトークンがかかったかを振り返るときに使う。
+
+```sh
+harness-report <worktree のパス> [--json]
+```
+
+worktree のパスを渡すと、`~/.claude/projects/` からその worktree の最新のログを選ぶ。別のログを使いたいときは、jsonl のパスを直接渡す。
+
+報告には次の項目が並ぶ。
+
+- 完了までにかかった時間。返答を待っていた時間は含めない。
+- 最初の依頼のあとに受け取ったプロンプトとコマンド
+- 消費したトークン。advisor の分も含める。
+- 差分率の推移と最後の判定。worktree の `.figma-diff/runs.jsonl` から読む。
+- スキルの手順書・`figma-diff`・`design-flow`・`design-image`・Figma MCP を使った時刻
+
+パスを複数渡すと、セッションごとの列が並ぶ。このときは、あるセッションがほかの worktree のファイルを読んだ記録も載る。
 
 ## 開発
 
