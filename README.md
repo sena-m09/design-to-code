@@ -11,6 +11,7 @@
 | `figma-diff` コマンド（`scripts/figma-diff.mjs`） | デザインの画像と実装の描画結果を比べる |
 | `design-image` コマンド（`scripts/design-image.mjs`） | デザインの画像の寸法・色・背景の切り替わりを測る |
 | `design-flow` コマンド（`scripts/design-flow.mjs`） | image-to-code の手順の順番と、検証・差分の合否・調整の回数を決める |
+| `harness-report` コマンド（`scripts/harness-report.mjs`） | スキルを動かした Claude Code のセッションを集計し、HTML の報告にまとめる |
 
 ## プロジェクトへの導入
 
@@ -124,6 +125,28 @@ design-flow status          # 各回の diffRatio と経過
 手順と遷移の全体は [docs/design-flow.md](docs/design-flow.md) の状態遷移図にある。図は `scripts/lib/flow/machine.mjs` の遷移表から `pnpm docs:flow` で生成していて、表と図がずれるとテストが落ちる。
 
 `report` は、証拠が揃っていないと拒否する。実装や調整はファイルが変わっていること、調整を戻したときは一番良かった計測時とファイルの中身が一致することを確かめる。計測のたびに、`.figma-diff/runs.jsonl` へ差分率が 1 行ずつ残る。
+
+### harness-report
+
+スキルを動かした Claude Code のセッションのログを読み、HTML の報告にまとめる。スキルを試したあと、どれだけ手間とトークンがかかったかを振り返るときに使う。
+
+```sh
+harness-report <worktree のパス> > report.html
+```
+
+報告は標準出力に出るので、ファイルに書き出してブラウザで開く。集計した値をそのまま見たいときは `--json` を付ける。
+
+worktree のパスを渡すと、`~/.claude/projects/` からその worktree の最新のログを選ぶ。別のログを使いたいときは、jsonl のパスを直接渡す。
+
+報告には次の項目が並ぶ。
+
+- 完了までにかかった時間。返答を待っていた時間は含めない。
+- 最初の依頼のあとに受け取ったプロンプトとコマンド
+- 消費したトークン。advisor の分も含める。
+- 差分率の推移と最後の判定。worktree の `.figma-diff/runs.jsonl` から読む。
+- スキルの手順書・`figma-diff`・`design-flow`・`design-image`・Figma MCP を使った時刻
+
+パスを複数渡すと、セッションごとの列が並ぶ。このときは、あるセッションがほかの worktree のファイルを読んだ記録も載る。
 
 ## 開発
 
