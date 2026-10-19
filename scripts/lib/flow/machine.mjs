@@ -40,6 +40,11 @@ export const GUARDS = {
 		rejection: (c) =>
 			`作業ツリーが ${bestBeforeLatest(c.state).index} 回目の計測時と一致しません。その時点の状態に戻してから報告してください（コミットしたかどうかは問いません）。`,
 	},
+	revertedAtLimit: {
+		label: "一番良かった計測時と中身が同じで、調整が上限の回数に達している",
+		test: (c) => GUARDS.revertedToBest.test(c) && GUARDS.limitReached.test(c),
+		rejection: (c) => GUARDS.revertedToBest.rejection(c),
+	},
 	allPassed: { label: "すべて成功", test: (c) => c.failures.length === 0 },
 	anyFailed: { label: "失敗あり", test: (c) => c.failures.length > 0 },
 	passed: { label: "合格", test: (c) => c.attempt.pass },
@@ -60,14 +65,15 @@ export const TRANSITIONS = [
 	{ from: "implement", on: "report", guard: "treeChanged", to: "verify" },
 	{ from: "fix", on: "report", guard: "treeChanged", to: "verify" },
 	{ from: "adjust", on: "report", guard: "treeChanged", to: "verify" },
+	{ from: "revert", on: "report", guard: "revertedAtLimit", to: "review" },
 	{ from: "revert", on: "report", guard: "revertedToBest", to: "adjust" },
 	{ from: "review", on: "report", to: "report" },
 	{ from: "report", on: "report", to: "done" },
 	{ from: "verify", on: "verify", guard: "allPassed", to: "measure" },
 	{ from: "verify", on: "verify", guard: "anyFailed", to: "fix" },
 	{ from: "measure", on: "measure", guard: "passed", to: "review" },
-	{ from: "measure", on: "measure", guard: "limitReached", to: "review" },
 	{ from: "measure", on: "measure", guard: "notImproved", to: "revert" },
+	{ from: "measure", on: "measure", guard: "limitReached", to: "review" },
 	{ from: "measure", on: "measure", guard: "otherwise", to: "adjust" },
 ];
 
@@ -134,14 +140,16 @@ export function nextDirective(state, paths) {
 			};
 			break;
 		}
-		case "report":
+		case "report": {
+			const final = bestAttempt(state.attempts);
 			directive.context = {
 				diffRatios: state.attempts.map((a) => a.diffRatio),
-				pass: latest?.pass ?? false,
+				pass: final?.pass ?? false,
 				gaveUp: state.gaveUp,
-				comparePath: latest?.comparePath,
+				comparePath: final?.comparePath,
 			};
 			break;
+		}
 	}
 	return directive;
 }
@@ -152,7 +160,7 @@ export function applyReport(state, step, { treeHash, notesWritten, now }) {
 	}
 	const t = transition("report", { state, treeHash, notesWritten });
 	const next = { ...withEvent(state, step, "completed", now), step: t.to };
-	if (t.guard === "treeChanged" || t.guard === "revertedToBest") next.lastTreeHash = treeHash;
+	if (["treeChanged", "revertedToBest", "revertedAtLimit"].includes(t.guard)) next.lastTreeHash = treeHash;
 	if (step === "adjust") next.adjustments = state.adjustments + 1;
 	return next;
 }
@@ -175,6 +183,6 @@ export function applyMeasure(state, attempt, { now }) {
 		...withEvent(state, "measure", "measured", now, { diffRatio: attempt.diffRatio, pass: attempt.pass }),
 		attempts: [...state.attempts, recorded],
 		step: t.to,
-		gaveUp: t.guard === "limitReached",
+		gaveUp: t.guard !== "passed" && GUARDS.limitReached.test({ state }),
 	};
 }

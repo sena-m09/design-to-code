@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -11,7 +11,8 @@ import { SUMMARY_VERSION } from "./lib/report.mjs";
 const USAGE = `使い方: design-flow <コマンド> [オプション]
 
   start   --figma <PNG> --url <URL> --selector <セレクタ> --width <設計幅> [--check <コマンド> ...]
-          [--figma-width <px>] [--hide <セレクタ>] [--threshold <0-1>] [--max-adjust <回数>] [--tag <名前>] [--force]
+          [--figma-width <px>] [--hide <セレクタ>] [--threshold <0-1>] [--max-adjust <回数>]
+          [--wait <ミリ秒>] [--height <px>] [--tag <名前>] [--force]
                        フローを始める
   next                 次の手順を JSON で出す（状態は変えない）
   report <手順>         LLM が担当する手順を終えたと報告する
@@ -68,6 +69,8 @@ const { values, positionals } = parseArgs({
 		hide: { type: "string" },
 		threshold: { type: "string", default: "0.02" },
 		"max-adjust": { type: "string", default: "3" },
+		wait: { type: "string" },
+		height: { type: "string" },
 		tag: { type: "string", default: "baseline" },
 		check: { type: "string", multiple: true, default: [] },
 		force: { type: "boolean", default: false },
@@ -81,6 +84,23 @@ try {
 		case "start": {
 			const missing = ["figma", "url", "selector", "width"].filter((key) => !values[key]);
 			if (missing.length > 0) fail(`必須引数が不足しています: ${missing.map((k) => `--${k}`).join(", ")}`);
+			for (const [name, min] of [
+				["width", 1],
+				["figma-width", 1],
+				["threshold", 0],
+				["max-adjust", 0],
+				["wait", 0],
+				["height", 1],
+			]) {
+				if (values[name] === undefined) continue;
+				const value = Number(values[name]);
+				if (!Number.isFinite(value) || value < min) {
+					fail(`--${name} には ${min} 以上の数値を指定してください（渡された値: "${values[name]}"）`);
+				}
+			}
+			if (!Number.isInteger(Number(values["max-adjust"]))) {
+				fail(`--max-adjust には整数を指定してください（渡された値: "${values["max-adjust"]}"）`);
+			}
 			if (existsSync(statePath) && loadState().step !== "done" && !values.force) {
 				fail("進行中のフローがあります。続けるなら design-flow next、始め直すなら --force を付けてください。");
 			}
@@ -93,6 +113,8 @@ try {
 				hide: values.hide,
 				threshold: Number(values.threshold),
 				maxAdjust: Number(values["max-adjust"]),
+				wait: values.wait === undefined ? undefined : Number(values.wait),
+				height: values.height === undefined ? undefined : Number(values.height),
 				tag: values.tag,
 				checks: values.check,
 			};
@@ -141,9 +163,13 @@ try {
 			];
 			if (config.figmaWidth !== undefined) args.push("--figma-width", String(config.figmaWidth));
 			if (config.hide) args.push("--hide", config.hide);
-			const run = spawnSync(process.execPath, args, { cwd, encoding: "utf8" });
+			if (config.wait !== undefined) args.push("--wait", String(config.wait));
+			if (config.height !== undefined) args.push("--height", String(config.height));
 			const outDir = join(cwd, ".figma-diff", label);
 			const summaryPath = join(outDir, "summary.json");
+			// 始め直す前のフローの同じ回の結果が残っていると、撮影に失敗しても今回の結果として読んでしまう
+			rmSync(summaryPath, { force: true });
+			const run = spawnSync(process.execPath, args, { cwd, encoding: "utf8" });
 			if (!existsSync(summaryPath)) {
 				fail(`差分を測れませんでした。\n${run.stderr || run.stdout}`);
 			}

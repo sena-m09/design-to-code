@@ -19,14 +19,15 @@ stateDiagram-v2
     implement --> verify: report [ファイルが変わった]
     fix --> verify: report [ファイルが変わった]
     adjust --> verify: report [ファイルが変わった]
+    revert --> review: report [一番良かった計測時と中身が同じで、調整が上限の回数に達している]
     revert --> adjust: report [一番良かった計測時と中身が同じ]
     review --> report: report
     report --> done: report
     verify --> measure: verify [すべて成功]
     verify --> fix: verify [失敗あり]
     measure --> review: measure [合格]
-    measure --> review: measure [調整が上限の回数に達した]
     measure --> revert: measure [それまでの最良より減っていない]
+    measure --> review: measure [調整が上限の回数に達した]
     measure --> adjust: measure [それ以外]
     done --> [*]
 ```
@@ -56,12 +57,13 @@ stateDiagram-v2
 | `implement` | `report` | ファイルが変わった | `verify` |
 | `fix` | `report` | ファイルが変わった | `verify` |
 | `adjust` | `report` | ファイルが変わった | `verify` |
+| `revert` | `report` | 一番良かった計測時と中身が同じで、調整が上限の回数に達している | `review` |
 | `revert` | `report` | 一番良かった計測時と中身が同じ | `adjust` |
 | `review` | `report` | - | `report` |
 | `report` | `report` | - | `done` |
 | `verify` | `verify` | すべて成功 | `measure` |
 | `verify` | `verify` | 失敗あり | `fix` |
 | `measure` | `measure` | 合格 | `review` |
-| `measure` | `measure` | 調整が上限の回数に達した | `review` |
 | `measure` | `measure` | それまでの最良より減っていない | `revert` |
+| `measure` | `measure` | 調整が上限の回数に達した | `review` |
 | `measure` | `measure` | それ以外 | `adjust` |

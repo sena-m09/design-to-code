@@ -7,7 +7,11 @@ const PATHS = { notes: "/p/.figma-diff/flow/reading.md" };
 const CONFIG = { figma: "/p/comp.png", url: "http://localhost", selector: "main", width: 375, threshold: 0.02, maxAdjust: 3, tag: "baseline", checks: ["pnpm typecheck"] };
 
 function measured(state, diffRatio, treeHash) {
-	return applyMeasure(state, { diffRatio, pass: diffRatio <= 0.02, summaryPath: "s", comparePath: "c", treeHash }, { now: NOW });
+	return applyMeasure(
+		state,
+		{ diffRatio, pass: diffRatio <= 0.02, summaryPath: `${treeHash}/summary.json`, comparePath: `${treeHash}/compare.png`, treeHash },
+		{ now: NOW },
+	);
 }
 
 function verified(state) {
@@ -91,5 +95,25 @@ describe("差分の判定", () => {
 		assert.equal(state.step, "review");
 		assert.equal(state.gaveUp, true);
 		assert.deepEqual(state.attempts.map((a) => a.adjustments), [0, 1, 2, 3]);
+	});
+
+	test("最後の調整で差分が増えたら、一番良かった状態に戻してから打ち切り、報告ではその回の比較画像を示す", () => {
+		let state = implementedAndMeasured(0.3);
+		state = adjustedAndMeasured(state, 0.25, "t2");
+		state = adjustedAndMeasured(state, 0.2, "t3");
+		state = adjustedAndMeasured(state, 0.4, "t4");
+		assert.equal(state.step, "revert");
+		assert.equal(state.gaveUp, true);
+
+		state = applyReport(state, "revert", { treeHash: "t3", now: NOW });
+		assert.equal(state.step, "review");
+
+		state = applyReport(state, "review", { treeHash: "t3", now: NOW });
+		assert.deepEqual(nextDirective(state, PATHS).context, {
+			diffRatios: [0.3, 0.25, 0.2, 0.4],
+			pass: false,
+			gaveUp: true,
+			comparePath: "t3/compare.png",
+		});
 	});
 });
