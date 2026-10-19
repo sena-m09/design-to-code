@@ -53,6 +53,16 @@ describe("検証", () => {
 		assert.equal(state.step, "fix");
 		assert.deepEqual(nextDirective(state, PATHS).context.failures.map((f) => f.command), ["pnpm typecheck"]);
 	});
+
+	test("検証のコマンドが無いときは差分の計測へ進むが、記録には成功ではなく飛ばしたと残る", () => {
+		let state = createState({ ...CONFIG, checks: [] }, { treeHash: "t0", now: NOW });
+		state = applyReport(state, "read", { notesWritten: true, treeHash: "t0", now: NOW });
+		state = applyReport(state, "implement", { treeHash: "t1", now: NOW });
+		const skipped = applyVerify(state, [], { now: NOW });
+		assert.equal(skipped.step, "measure");
+		assert.equal(skipped.history.at(-1).event, "skipped");
+		assert.equal(verified(state).history.at(-1).event, "passed");
+	});
 });
 
 describe("差分の判定", () => {

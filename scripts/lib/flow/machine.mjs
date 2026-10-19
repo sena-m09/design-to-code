@@ -160,8 +160,9 @@ export function applyReport(state, step, { treeHash, notesWritten, now }) {
 export function applyVerify(state, results, { now }) {
 	const failures = results.filter((r) => r.exitCode !== 0);
 	const t = transition("verify", { state, failures });
+	const event = results.length === 0 ? "skipped" : t.guard === "allPassed" ? "passed" : "failed";
 	return {
-		...withEvent(state, "verify", t.guard === "allPassed" ? "passed" : "failed", now, { failed: failures.map((f) => f.command) }),
+		...withEvent(state, "verify", event, now, { failed: failures.map((f) => f.command) }),
 		verifyRuns: state.verifyRuns + 1,
 		lastVerifyFailures: failures,
 		step: t.to,
