@@ -33,11 +33,17 @@ JPG のときは、先に `sips -s format png <カンプ.jpg> --out <カンプ.p
 
 ## 始め方
 
-プロジェクトルートで、フローを始める。`--check` には、lint・型チェック（ビルドが必要なプロジェクトならビルドも）のコマンドを 1 つずつ渡す。`--tag` には、ユーザーから指定された名前（試している仮説など）を渡し、指定が無ければ省く。
+プロジェクトルートで、フローを始める。`--tag` には、ユーザーから指定された名前（試している仮説など）を渡し、指定が無ければ省く。
 
 ```sh
-design-flow start --figma <カンプの PNG> --url <描画先の URL> --selector "<対象セレクタ>" --width <設計幅> --check "<lint のコマンド>" --check "<型チェックのコマンド>"
+design-flow start --figma <カンプの PNG> --url <描画先の URL> --selector "<対象セレクタ>" --width <設計幅> --check "<コマンド>"
 ```
+
+`--check` には、前提チェックで見つけた lint・型チェック・ビルドのコマンドを渡す。渡し方はプロジェクトの scripts の組み方で変わる。
+
+- `verify` や `check` のように、lint や型チェックをまとめて走らせる script があれば、それ 1 つだけを渡す。中身を見て、何を走らせているかを確かめてから選ぶ。
+- まとめた script が無ければ、見つかったコマンドを 1 つずつ `--check` に渡す（`--check "pnpm lint" --check "pnpm typecheck"` のように繰り返す）。
+- 1 つも無ければ `--check` を省く。そのプロジェクトに無いコマンドを作って渡さない。
 
 固定ヘッダーのようにカンプに無い要素が写り込む場合は、`--hide "<そのセレクタ>"` を足す。
 
@@ -84,7 +90,7 @@ directive の `context.failures` に、失敗したコマンドと出力の末�
 
 ## 自己レビュー
 
-分岐元との全差分を読み直し、[references/self-review.md](references/self-review.md) の観点で点検する。直したら、もう一度 lint・型チェックを通しておく。
+分岐元との全差分を読み直し、[references/self-review.md](references/self-review.md) の観点で点検する。直したら、もう一度 `--check` に渡したコマンドを通しておく。
 
 ## 報告
 
@@ -92,5 +98,6 @@ directive の `context.failures` に、失敗したコマンドと出力の末�
 
 - 追加・変更したファイル一覧
 - 当てたトークンとコンポーネント、近いトークンが無かった値
+- `--check` に渡したコマンド。省いた場合は、プロジェクトに lint・型チェックが無かったこと
 - 差分チェックの結果（各回の `diffRatio` の推移と最終の `pass`。打ち切った場合（`gaveUp`）は `compare.png` のパス）
 - 画像から読み取れず推測で埋めたところ
